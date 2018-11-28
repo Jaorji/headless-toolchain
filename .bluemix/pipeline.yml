@@ -5,7 +5,7 @@ stages:
   - type: git
     service: ${REPO}
     # TODO: Replace with master once merged
-    branch: add-headless-toolchain
+    branch: headless-toolchain
     dir_name: null
   triggers:
   - type: commit
