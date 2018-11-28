@@ -1,51 +1,77 @@
 version: '2'
 messages:
-  $i18n: locales.yml
+  $i18n: nls/locales.yml
 template:
   name:
     $ref: "#/messages/template.name"
   description:
     $ref: "#/messages/template.description"
-  header: '![](toolchain.svg?localize)'
-  icon: icon.svg
+  # header: '![](toolchain.svg?localize)'
+  # icon: icon.svg
   required:
-    - sample-build
-    - sample-repo
+  - build
+  - repo
   info:
     git url: >-
-      [https://github.com/open-toolchain/simple-toolchain](https://github.com/open-toolchain/simple-toolchain)
+      [https://github.ibm.com/IoT-Enterprise/iotcs-starter](https://github.ibm.com/IoT-Enterprise/iotcs-starter)
     git branch: >-
-      [master](https://github.com/open-toolchain/simple-toolchain/tree/master)
+      [add-headless-toolchain](https://github.ibm.com/IoT-Enterprise/iotcs-starter/tree/add-headless-toolchain)
 toolchain:
-  name: 'simple-toolchain-{{timestamp}}'
+  name: 'iotcs-starterApp-{{tenant-name}}-{{timestamp}}'
   template:
     getting_started:
       $ref: "#/messages/template.gettingStarted"
 services:
-  sample-repo:
-    service_id: githubpublic
+  repo:
+    service_id: github_integrated
     parameters:
-      repo_name: '{{toolchain.name}}'
-      repo_url: 'https://github.com/open-toolchain/node-hello-world'
+      repo_url: "https://{{git_access_token}}@github.ibm.com/IoT-Enterprise/iotcs-starter"
+      repo_name: "{{toolchain.name}}"
       type: clone
+      private_repo: true
       has_issues: true
       enable_traceability: true
-  sample-build:
+      legal: true
+  build:
     service_id: pipeline
     parameters:
       services:
-        - sample-repo
-      name: '{{services.sample-repo.parameters.repo_name}}'
+      - repo
+      name: '{{services.repo.parameters.repo_name}}'
       ui-pipeline: true
       configuration:
         content:
           $text: pipeline.yml
         env:
-          SAMPLE_REPO: sample-repo
-          CF_APP_NAME: '{{services.sample-repo.parameters.repo_name}}'
-          PROD_SPACE_NAME: '{{space}}'
-          PROD_ORG_NAME: '{{organization}}'
-          PROD_REGION_ID: '{{region}}'
+          SAMPLE_REPO: repo
+          CF_APP_NAME: '{{form.pipeline.parameters.prod-app-name}}'
+          PROD_SPACE_NAME: '{{form.pipeline.parameters.prod-space}}'
+          PROD_ORG_NAME: '{{form.pipeline.parameters.prod-organization}}'
+          PROD_REGION_ID: '{{form.pipeline.parameters.prod-region}}'
+          API_KEY: '{{form.pipeline.parameters.api-key}}'
         execute: true
+        services: ["repo"]
+    hidden: ["form"]
+  deploy:
+    service_id: pipeline
+    schema:
+      $ref: deploy.json
+    service-category: pipeline
+    parameters:
+      app-name: "{{toolchain.name}}-kube-noservices"
+      dev-space: "{{space}}"
+      dev-organization: "{{organization}}"
+      dev-region: "{{region}}"
+      api-key: "{{apiKey}}"
   webide:
     service_id: orion
+form:
+  pipeline:
+    parameters:
+      prod-region: "{{prod-region}}"
+      prod-organization: "{{prod-organization}}"
+      prod-space: "{{prod-space}}"
+      prod-app-name: "{{services.repo.parameters.repo_name}}"
+      api-key: "{{apiKey}}"
+    schema:
+      $ref: deploy.json
